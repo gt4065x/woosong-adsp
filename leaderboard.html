@@ -1,0 +1,182 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ADsP 모의고사 · 리더보드</title>
+<style>
+  * { margin:0; padding:0; box-sizing:border-box; -webkit-tap-highlight-color:transparent; }
+  :root{ --bg:#0f1115; --card:#1a1d24; --card2:#22262f; --line:#2c313c; --txt:#e8eaed; --sub:#9aa0aa; --accent:#5b8cff; --accent2:#7aa2ff; --ok:#2ecc71; --no:#ff5c5c; --gold:#ffd15c; --silver:#c7ccd6; --bronze:#e0955a; }
+  body{ font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,'Malgun Gothic',sans-serif; background:var(--bg); color:var(--txt); line-height:1.6; padding-bottom:50px; }
+  .wrap{ max-width:680px; margin:0 auto; padding:0 16px; }
+  header{ position:sticky; top:0; z-index:10; background:rgba(15,17,21,.92); backdrop-filter:blur(10px); border-bottom:1px solid var(--line); }
+  .hbar{ max-width:680px; margin:0 auto; padding:14px 16px; display:flex; align-items:center; justify-content:space-between; }
+  .title{ font-size:16px; font-weight:800; letter-spacing:-.3px; }
+  .title small{ color:var(--sub); font-weight:500; }
+
+  .intro{ text-align:center; padding:30px 20px 10px; }
+  .intro h1{ font-size:24px; letter-spacing:-.5px; margin-bottom:6px; }
+  .intro p{ color:var(--sub); font-size:14px; }
+  .controls{ display:flex; gap:10px; margin:22px 0 8px; }
+  .controls select{ flex:1; background:var(--card); border:1.5px solid var(--line); border-radius:12px; padding:13px 15px; color:var(--txt); font-size:15px; font-family:inherit; }
+  .controls select:focus{ outline:none; border-color:var(--accent); }
+  .refresh{ background:var(--card2); border:1px solid var(--line); border-radius:12px; padding:0 16px; color:var(--txt); cursor:pointer; font-size:18px; }
+
+  .stats{ display:flex; gap:10px; margin:14px 0 22px; }
+  .stat{ flex:1; background:var(--card); border:1px solid var(--line); border-radius:12px; padding:14px 10px; text-align:center; }
+  .stat .v{ font-size:22px; font-weight:800; color:var(--accent2); } .stat .l{ font-size:12px; color:var(--sub); }
+
+  .podium{ display:flex; align-items:flex-end; justify-content:center; gap:10px; margin:10px 0 26px; }
+  .pod{ flex:1; max-width:130px; text-align:center; }
+  .pod .medal{ font-size:26px; } 
+  .pod .pname{ font-size:14px; font-weight:700; margin-top:2px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+  .pod .pscore{ font-size:13px; color:var(--sub); }
+  .pod .bar{ border-radius:12px 12px 0 0; margin-top:8px; display:flex; align-items:flex-start; justify-content:center; padding-top:8px; font-size:20px; font-weight:800; color:#0f1115; }
+  .pod.p1 .bar{ height:96px; background:linear-gradient(180deg,var(--gold),#e0b23c); }
+  .pod.p2 .bar{ height:72px; background:linear-gradient(180deg,var(--silver),#9aa0aa); }
+  .pod.p3 .bar{ height:56px; background:linear-gradient(180deg,var(--bronze),#b8763f); }
+
+  .list{ display:flex; flex-direction:column; gap:8px; }
+  .row{ display:flex; align-items:center; gap:12px; background:var(--card); border:1px solid var(--line); border-radius:12px; padding:12px 14px; }
+  .row .rank{ width:30px; text-align:center; font-size:15px; font-weight:800; color:var(--sub); flex-shrink:0; }
+  .row.top1 .rank{ color:var(--gold); } .row.top2 .rank{ color:var(--silver); } .row.top3 .rank{ color:var(--bronze); }
+  .row .who{ flex:1; min-width:0; }
+  .row .who .nm{ font-size:15px; font-weight:600; }
+  .row .who .sid{ font-size:12px; color:var(--sub); }
+  .row .sc{ text-align:right; flex-shrink:0; }
+  .row .sc .pt{ font-size:17px; font-weight:800; }
+  .row .sc .pf{ font-size:11px; font-weight:700; }
+  .row .sc .pf.pass{ color:var(--ok); } .row .sc .pf.fail{ color:var(--no); }
+  .row.me{ border-color:var(--accent); background:rgba(91,140,255,.08); }
+  .medal-ic{ font-size:16px; }
+
+  .empty{ text-align:center; color:var(--sub); padding:50px 20px; font-size:14px; }
+  .loading{ text-align:center; color:var(--sub); padding:60px 20px; }
+  .note{ font-size:12px; color:var(--sub); text-align:center; margin-top:20px; }
+  .tabs{ display:flex; gap:8px; margin:8px 0 4px; }
+  .tab{ flex:1; text-align:center; padding:9px; border-radius:10px; background:var(--card2); border:1px solid var(--line); font-size:13px; font-weight:600; color:var(--sub); cursor:pointer; }
+  .tab.active{ background:var(--accent); color:#fff; border-color:var(--accent); }
+</style>
+</head>
+<body>
+<header><div class="hbar">
+  <div class="title">🏆 ADsP 리더보드 <small>· 명예의 전당</small></div>
+</div></header>
+
+<div class="wrap">
+  <div class="intro">
+    <h1>실전 모의고사 랭킹</h1>
+    <p>회차별 역대 응시 학생들의 점수 순위입니다.</p>
+  </div>
+
+  <div class="controls">
+    <select id="examSelect"><option value="">불러오는 중…</option></select>
+    <button class="refresh" onclick="load()" title="새로고침">↻</button>
+  </div>
+  <div class="tabs">
+    <div class="tab active" id="tabBest" onclick="setMode('best')">🥇 학생별 최고점</div>
+    <div class="tab" id="tabAll" onclick="setMode('all')">📋 전체 응시 기록</div>
+  </div>
+
+  <div id="stats" class="stats hidden"></div>
+  <div id="podium"></div>
+  <div id="list" class="list"><div class="loading">회차를 선택하세요</div></div>
+  <div class="note">동점일 경우 더 짧은 시간에 제출한 순으로 정렬됩니다.</div>
+</div>
+
+<script type="module">
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
+import { getDatabase, ref, get } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-database.js";
+const firebaseConfig = {
+  apiKey: "AIzaSyDK62mS_K3JX14VLHZq2zYFFRl6K8u1N_I",
+  authDomain: "adsp-prep-test.firebaseapp.com",
+  databaseURL: "https://adsp-prep-test-default-rtdb.asia-southeast1.firebasedatabase.app",
+  projectId: "adsp-prep-test", storageBucket: "adsp-prep-test.firebasestorage.app",
+  messagingSenderId: "753653860246", appId: "1:753653860246:web:7541a10527ed17658cbfb7"
+};
+let db=null; try{ db=getDatabase(initializeApp(firebaseConfig)); }catch(e){ console.error(e); }
+let exams={}, allResults=[], mode='best';
+
+async function loadExams(){
+  const sel=document.getElementById('examSelect');
+  if(!db){ sel.innerHTML='<option value="">DB 연결 안됨</option>'; return; }
+  try{
+    const snap=await get(ref(db,'exams'));
+    let opts='<option value="__ALL__">전체 회차 통합</option>';
+    if(snap.exists()){ exams=snap.val();
+      const ids=Object.keys(exams).sort((a,b)=>(exams[b].createdAt||'').localeCompare(exams[a].createdAt||''));
+      opts+=ids.map(id=>'<option value="'+id+'">'+exams[id].title+'</option>').join('');
+    }
+    sel.innerHTML=opts;
+    sel.onchange=load; load();
+  }catch(e){ sel.innerHTML='<option value="">불러오기 실패</option>'; }
+}
+window.setMode=function(m){ mode=m;
+  document.getElementById('tabBest').classList.toggle('active',m==='best');
+  document.getElementById('tabAll').classList.toggle('active',m==='all'); render(); }
+
+window.load=async function(){
+  const list=document.getElementById('list'); list.innerHTML='<div class="loading">불러오는 중…</div>';
+  document.getElementById('podium').innerHTML=''; document.getElementById('stats').classList.add('hidden');
+  if(!db){ list.innerHTML='<div class="empty">DB 연결 안됨</div>'; return; }
+  try{
+    const snap=await get(ref(db,'results'));
+    allResults = snap.exists()? Object.values(snap.val()) : [];
+    render();
+  }catch(e){ list.innerHTML='<div class="empty">불러오기 실패: '+e.message+'</div>'; }
+}
+
+function render(){
+  const examId=document.getElementById('examSelect').value;
+  let rows=allResults.filter(r=>r && typeof r.total==='number');
+  if(examId && examId!=='__ALL__') rows=rows.filter(r=>r.examId===examId);
+  // best mode: keep highest score per student (name+sid)
+  if(mode==='best'){
+    const map={};
+    rows.forEach(r=>{ const key=(r.sid||'')+'|'+(r.name||'');
+      if(!map[key] || r.total>map[key].total || (r.total===map[key].total && (r.durationSec||1e9)<(map[key].durationSec||1e9))) map[key]=r; });
+    rows=Object.values(map);
+  }
+  rows.sort((a,b)=> b.total-a.total || (a.durationSec||1e9)-(b.durationSec||1e9) || (a.at||'').localeCompare(b.at||''));
+
+  const list=document.getElementById('list');
+  const statsEl=document.getElementById('stats'); const podEl=document.getElementById('podium');
+  if(!rows.length){ list.innerHTML='<div class="empty">아직 응시 기록이 없습니다.<br>학생들이 시험을 보면 여기에 랭킹이 표시됩니다.</div>'; podEl.innerHTML=''; return; }
+
+  // stats
+  const passCnt=rows.filter(r=>r.pass).length;
+  const avg=Math.round(rows.reduce((s,r)=>s+r.total,0)/rows.length);
+  const top=rows[0].total;
+  statsEl.classList.remove('hidden');
+  statsEl.innerHTML='<div class="stat"><div class="v">'+rows.length+'</div><div class="l">'+(mode==='best'?'응시 학생':'응시 기록')+'</div></div>'+
+    '<div class="stat"><div class="v">'+avg+'</div><div class="l">평균 점수</div></div>'+
+    '<div class="stat"><div class="v">'+top+'</div><div class="l">최고 점수</div></div>'+
+    '<div class="stat"><div class="v">'+Math.round(passCnt/rows.length*100)+'%</div><div class="l">합격률</div></div>';
+
+  // podium (top3)
+  const medals=['🥇','🥈','🐉'];  const podClass=['p1','p2','p3']; const order=[1,0,2]; // 2nd,1st,3rd visual order
+  const top3=rows.slice(0,3);
+  if(top3.length>=1){
+    podEl.innerHTML='<div class="podium">'+order.map(oi=>{ const r=top3[oi]; if(!r)return '<div class="pod"></div>';
+      const m=['🥇','🥈','🥉'][oi];
+      return '<div class="pod '+podClass[oi]+'"><div class="medal">'+m+'</div>'+
+        '<div class="pname">'+esc(r.name)+'</div><div class="pscore">'+r.total+'점</div>'+
+        '<div class="bar">'+(oi+1)+'</div></div>';
+    }).join('')+'</div>';
+  } else podEl.innerHTML='';
+
+  // full list
+  list.innerHTML=rows.map((r,i)=>{
+    const rank=i+1; const medal=['🥇','🥈','🥉'][i]||'';
+    const topcls=i<3?(' top'+(i+1)):'';
+    const examName=(examId==='__ALL__' && exams[r.examId])?('<span style="color:var(--sub);font-size:11px"> · '+exams[r.examId].title+'</span>'):'';
+    return '<div class="row'+topcls+'"><div class="rank">'+(medal||rank)+'</div>'+
+      '<div class="who"><div class="nm">'+esc(r.name)+examName+'</div><div class="sid">'+esc(r.sid||'')+'</div></div>'+
+      '<div class="sc"><div class="pt">'+r.total+'</div><div class="pf '+(r.pass?'pass':'fail')+'">'+(r.pass?'합격':'불합격')+'</div></div></div>';
+  }).join('');
+}
+function esc(s){ return String(s==null?'':s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c])); }
+loadExams();
+</script>
+</body>
+</html>
