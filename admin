@@ -1,0 +1,284 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ADsP 모의고사 · 관리자</title>
+<style>
+  * { margin:0; padding:0; box-sizing:border-box; -webkit-tap-highlight-color:transparent; }
+  :root{ --bg:#0f1115; --card:#1a1d24; --card2:#22262f; --line:#2c313c; --txt:#e8eaed; --sub:#9aa0aa; --accent:#5b8cff; --accent2:#7aa2ff; --ok:#2ecc71; --okbg:#12331f; --no:#ff5c5c; --nobg:#361618; --warn:#ffb84d; }
+  body{ font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,'Malgun Gothic',sans-serif; background:var(--bg); color:var(--txt); line-height:1.6; padding-bottom:60px; }
+  .wrap{ max-width:720px; margin:0 auto; padding:0 16px; }
+  header{ border-bottom:1px solid var(--line); margin-bottom:24px; }
+  .hbar{ max-width:720px; margin:0 auto; padding:16px; display:flex; align-items:center; justify-content:space-between; }
+  .title{ font-size:16px; font-weight:800; letter-spacing:-.3px; }
+  .title small{ color:var(--sub); font-weight:500; }
+  .logout{ font-size:13px; color:var(--sub); background:var(--card2); border:1px solid var(--line); padding:6px 12px; border-radius:9px; cursor:pointer; }
+
+  .gate{ max-width:360px; margin:80px auto; text-align:center; }
+  .gate .lock{ font-size:40px; margin-bottom:16px; }
+  .gate h1{ font-size:22px; margin-bottom:8px; }
+  .gate p{ color:var(--sub); font-size:14px; margin-bottom:24px; }
+
+  .card{ background:var(--card); border:1px solid var(--line); border-radius:16px; padding:22px; margin-bottom:18px; }
+  .card h2{ font-size:16px; font-weight:700; margin-bottom:4px; }
+  .card .desc{ font-size:13px; color:var(--sub); margin-bottom:18px; }
+  .field{ margin:14px 0; }
+  .field label{ display:block; font-size:13px; color:var(--sub); margin-bottom:6px; font-weight:600; }
+  .field input, .field textarea{ width:100%; background:var(--card2); border:1.5px solid var(--line); border-radius:11px; padding:13px 15px; color:var(--txt); font-size:15px; font-family:inherit; }
+  .field input:focus, .field textarea:focus{ outline:none; border-color:var(--accent); }
+  .row2{ display:grid; grid-template-columns:1fr 1fr; gap:12px; }
+  .btn{ display:inline-block; width:100%; border:none; cursor:pointer; font-family:inherit; background:linear-gradient(135deg,var(--accent),var(--accent2)); color:#fff; font-size:15px; font-weight:700; padding:15px; border-radius:13px; transition:transform .1s, opacity .2s; }
+  .btn:active{ transform:scale(.98); } .btn:disabled{ opacity:.4; cursor:not-allowed; }
+  .btn.ghost{ background:var(--card2); color:var(--txt); border:1px solid var(--line); }
+  .btn.danger{ background:var(--nobg); color:var(--no); border:1px solid var(--no); }
+  .btn.sm{ width:auto; padding:8px 14px; font-size:13px; }
+
+  .drop{ border:2px dashed var(--line); border-radius:13px; padding:30px 20px; text-align:center; color:var(--sub); font-size:14px; cursor:pointer; transition:border-color .2s, background .2s; }
+  .drop:hover, .drop.over{ border-color:var(--accent); background:rgba(91,140,255,.06); color:var(--txt); }
+  .drop b{ color:var(--accent2); }
+  .fileinfo{ font-size:13px; margin-top:12px; padding:12px 14px; border-radius:10px; background:var(--card2); border:1px solid var(--line); display:none; }
+  .fileinfo.show{ display:block; }
+  .fileinfo.err{ border-color:var(--no); color:var(--no); }
+  .fileinfo.ok{ border-color:var(--ok); }
+
+  .subj-config{ background:var(--card2); border:1px solid var(--line); border-radius:11px; padding:14px; margin-top:8px; font-size:13px; }
+  .subj-config .r{ display:grid; grid-template-columns:1fr auto auto; gap:8px; align-items:center; margin:6px 0; }
+  .subj-config input{ width:70px; text-align:center; background:var(--bg); border:1px solid var(--line); border-radius:8px; padding:6px; color:var(--txt); font-family:inherit; }
+  .subj-config .warn{ color:var(--warn); font-size:12px; margin-top:8px; }
+
+  .examlist{ display:flex; flex-direction:column; gap:10px; }
+  .exam-item{ background:var(--card2); border:1px solid var(--line); border-radius:12px; padding:14px 16px; display:flex; align-items:center; justify-content:space-between; gap:12px; }
+  .exam-item .ei-main{ min-width:0; }
+  .exam-item .ei-title{ font-size:15px; font-weight:700; }
+  .exam-item .ei-meta{ font-size:12px; color:var(--sub); margin-top:2px; }
+  .exam-item .ei-actions{ display:flex; gap:8px; flex-shrink:0; }
+  .empty{ text-align:center; color:var(--sub); font-size:14px; padding:30px; }
+  .hidden{ display:none; }
+  .toast{ position:fixed; bottom:20px; left:50%; transform:translateX(-50%); background:var(--card2); border:1px solid var(--line); color:var(--txt); padding:12px 20px; border-radius:12px; font-size:14px; z-index:100; opacity:0; transition:opacity .3s; max-width:90%; text-align:center; }
+  .toast.show{ opacity:1; } .toast.err{ border-color:var(--no); color:var(--no); }
+  .stat-link{ font-size:13px; color:var(--accent2); text-decoration:none; }
+</style>
+</head>
+<body>
+
+<div id="gate" class="gate">
+  <div class="lock">🔒</div>
+  <h1>관리자 로그인</h1>
+  <p>ADsP 모의고사 관리 페이지입니다.</p>
+  <div class="field"><input type="password" id="pw" placeholder="비밀번호" onkeydown="if(event.key==='Enter')tryLogin()"></div>
+  <button class="btn" onclick="tryLogin()">로그인</button>
+</div>
+
+<div id="app" class="hidden">
+  <header><div class="hbar">
+    <div class="title">ADsP 모의고사 관리 <small>· Admin</small></div>
+    <button class="logout" onclick="logout()">로그아웃</button>
+  </div></header>
+  <div class="wrap">
+
+    <div class="card">
+      <h2>➕ 새 모의고사 등록</h2>
+      <div class="desc">CSV 형식: question, option1~4, answer, hint (헤더 포함, UTF-8 또는 CP949)</div>
+      <div class="field">
+        <label>회차 제목</label>
+        <input id="examTitle" placeholder="예: ADsP 실전 모의고사 2회">
+      </div>
+      <div class="row2">
+        <div class="field"><label>제한시간(분)</label><input id="examTime" type="number" value="70"></div>
+        <div class="field"><label>합격 점수</label><input id="examPass" type="number" value="60"></div>
+      </div>
+      <div class="field">
+        <label>문제 CSV 파일</label>
+        <div class="drop" id="drop">📄 여기로 CSV를 끌어다 놓거나 <b>클릭해서 선택</b>하세요
+          <input type="file" id="fileInput" accept=".csv" class="hidden"></div>
+        <div class="fileinfo" id="fileinfo"></div>
+      </div>
+      <div id="subjWrap" class="hidden">
+        <label style="font-size:13px;color:var(--sub);font-weight:600">과목 배분 (과락 판정용 · 문항 순서 기준)</label>
+        <div class="subj-config" id="subjConfig"></div>
+      </div>
+      <button class="btn" id="saveBtn" style="margin-top:18px" onclick="saveExam()" disabled>Firebase에 등록하기</button>
+    </div>
+
+    <div class="card">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px">
+        <h2 style="margin:0">📚 등록된 모의고사</h2>
+        <button class="btn ghost sm" onclick="loadExams()">새로고침</button>
+      </div>
+      <div class="desc">학생 페이지에 노출되는 회차 목록입니다.</div>
+      <div class="examlist" id="examList"><div class="empty">불러오는 중…</div></div>
+    </div>
+
+  </div>
+</div>
+<div class="toast" id="toast"></div>
+
+<script type="module">
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
+import { getDatabase, ref, push, set, get, remove } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-database.js";
+const firebaseConfig = {
+  apiKey: "AIzaSyDK62mS_K3JX14VLHZq2zYFFRl6K8u1N_I",
+  authDomain: "adsp-prep-test.firebaseapp.com",
+  databaseURL: "https://adsp-prep-test-default-rtdb.asia-southeast1.firebasedatabase.app",
+  projectId: "adsp-prep-test", storageBucket: "adsp-prep-test.firebasestorage.app",
+  messagingSenderId: "753653860246", appId: "1:753653860246:web:7541a10527ed17658cbfb7"
+};
+const ADMIN_PW="1230";
+let db=null;
+try{ db=getDatabase(initializeApp(firebaseConfig)); }catch(e){ console.error(e); }
+let parsedQuiz=null;
+
+window.tryLogin=function(){
+  if(document.getElementById('pw').value===ADMIN_PW){
+    sessionStorage.setItem('adsp_admin','1');
+    document.getElementById('gate').classList.add('hidden');
+    document.getElementById('app').classList.remove('hidden');
+    loadExams();
+  }else toast('비밀번호가 틀렸습니다',true);
+}
+window.logout=function(){ sessionStorage.removeItem('adsp_admin'); location.reload(); }
+if(sessionStorage.getItem('adsp_admin')==='1'){
+  document.getElementById('gate').classList.add('hidden');
+  document.getElementById('app').classList.remove('hidden');
+}
+
+// ---- CSV parsing ----
+function parseCSV(text){
+  const rows=[]; let cur=[],val='',q=false;
+  for(let i=0;i<text.length;i++){ const c=text[i];
+    if(q){ if(c==='"'){ if(text[i+1]==='"'){val+='"';i++;} else q=false; } else val+=c; }
+    else{ if(c==='"')q=true; else if(c===','){cur.push(val);val='';}
+      else if(c==='\n'){cur.push(val);rows.push(cur);cur=[];val='';}
+      else if(c==='\r'){} else val+=c; } }
+  if(val!==''||cur.length){ cur.push(val); rows.push(cur); }
+  return rows.filter(r=>r.some(c=>c.trim()!==''));
+}
+async function readFile(file){
+  const buf=await file.arrayBuffer();
+  let text;
+  try{ text=new TextDecoder('utf-8',{fatal:true}).decode(buf); }
+  catch(e){ text=new TextDecoder('euc-kr').decode(buf); }  // CP949 fallback
+  return text.replace(/^\uFEFF/,'');
+}
+
+function handleFile(file){
+  const info=document.getElementById('fileinfo');
+  info.className='fileinfo show';
+  readFile(file).then(text=>{
+    const rows=parseCSV(text);
+    const header=rows[0].map(h=>h.trim().toLowerCase());
+    const need=['question','option1','option2','option3','option4','answer','hint'];
+    const miss=need.filter(n=>!header.includes(n));
+    if(miss.length){ info.className='fileinfo show err'; info.textContent='❌ 누락된 컬럼: '+miss.join(', '); parsedQuiz=null; updateSave(); return; }
+    const gi=n=>header.indexOf(n);
+    const quiz=[]; const errs=[];
+    for(let i=1;i<rows.length;i++){ const r=rows[i];
+      const qn=r[gi('question')]?.trim();
+      if(!qn) continue;
+      const opts=[r[gi('option1')],r[gi('option2')],r[gi('option3')],r[gi('option4')]].map(x=>(x||'').trim());
+      const ans=(r[gi('answer')]||'').trim();
+      if(!opts.includes(ans)) errs.push((quiz.length+1)+'번(정답불일치)');
+      quiz.push({q:qn,opts,answer:ans,hint:(r[gi('hint')]||'').trim()});
+    }
+    if(!quiz.length){ info.className='fileinfo show err'; info.textContent='❌ 유효한 문제가 없습니다'; parsedQuiz=null; updateSave(); return; }
+    if(errs.length){ info.className='fileinfo show err'; info.textContent='⚠ 정답이 보기와 안 맞는 문제: '+errs.join(', ')+' — CSV를 확인하세요'; parsedQuiz=null; updateSave(); return; }
+    parsedQuiz=quiz;
+    info.className='fileinfo show ok'; info.textContent='✓ '+quiz.length+'문항 정상 인식됨';
+    buildSubjConfig(quiz.length);
+    updateSave();
+  }).catch(e=>{ info.className='fileinfo show err'; info.textContent='❌ 읽기 실패: '+e.message; });
+}
+
+function buildSubjConfig(n){
+  // 기본: 10 / 10 / 나머지
+  const s1=Math.min(10,n), s2=Math.min(10,Math.max(0,n-10)), s3=Math.max(0,n-20);
+  const wrap=document.getElementById('subjWrap'); wrap.classList.remove('hidden');
+  const cfg=document.getElementById('subjConfig');
+  cfg.innerHTML=
+    '<div class="r"><span>1과목 · 데이터 이해</span><input id="s1" type="number" value="'+s1+'"><span>문항</span></div>'+
+    '<div class="r"><span>2과목 · 분석 기획</span><input id="s2" type="number" value="'+s2+'"><span>문항</span></div>'+
+    '<div class="r"><span>3과목 · 데이터 분석</span><input id="s3" type="number" value="'+s3+'"><span>문항</span></div>'+
+    '<div class="warn" id="subjWarn"></div>';
+  ['s1','s2','s3'].forEach(id=>document.getElementById(id).addEventListener('input',()=>checkSubj(n)));
+  checkSubj(n);
+}
+function checkSubj(n){
+  const a=+document.getElementById('s1').value||0, b=+document.getElementById('s2').value||0, c=+document.getElementById('s3').value||0;
+  const w=document.getElementById('subjWarn');
+  if(a+b+c!==n){ w.textContent='⚠ 합계가 '+(a+b+c)+'문항 — 전체 '+n+'문항과 맞지 않습니다'; w.style.color='var(--no)'; }
+  else{ w.textContent='✓ 합계 '+n+'문항 일치 (각 과목 40% 미만 시 과락)'; w.style.color='var(--ok)'; }
+  updateSave();
+}
+function subjValid(){
+  if(!parsedQuiz) return false;
+  const a=+document.getElementById('s1')?.value||0,b=+document.getElementById('s2')?.value||0,c=+document.getElementById('s3')?.value||0;
+  return a+b+c===parsedQuiz.length;
+}
+function updateSave(){ document.getElementById('saveBtn').disabled=!(parsedQuiz && subjValid() && document.getElementById('examTitle').value.trim()); }
+document.getElementById('examTitle').addEventListener('input',updateSave);
+
+// drop zone
+const drop=document.getElementById('drop'), fi=document.getElementById('fileInput');
+drop.onclick=()=>fi.click();
+fi.onchange=()=>{ if(fi.files[0])handleFile(fi.files[0]); };
+['dragenter','dragover'].forEach(ev=>drop.addEventListener(ev,e=>{e.preventDefault();drop.classList.add('over');}));
+['dragleave','drop'].forEach(ev=>drop.addEventListener(ev,e=>{e.preventDefault();drop.classList.remove('over');}));
+drop.addEventListener('drop',e=>{ if(e.dataTransfer.files[0])handleFile(e.dataTransfer.files[0]); });
+
+// ---- save exam ----
+window.saveExam=async function(){
+  if(!db){ toast('DB 연결 안됨',true); return; }
+  const title=document.getElementById('examTitle').value.trim();
+  const time=+document.getElementById('examTime').value||70;
+  const passScore=+document.getElementById('examPass').value||60;
+  const s1=+document.getElementById('s1').value,s2=+document.getElementById('s2').value,s3=+document.getElementById('s3').value;
+  const questions=parsedQuiz.map((item,i)=>{ const n=i+1;
+    const subj = n<=s1?1:(n<=s1+s2?2:3); return {...item,subj}; });
+  const exam={ title, timeLimit:time, passScore,
+    subjCounts:{1:s1,2:s2,3:s3}, questions, count:questions.length,
+    createdAt:new Date().toISOString() };
+  const btn=document.getElementById('saveBtn'); btn.disabled=true; btn.textContent='등록 중…';
+  try{
+    const newRef=push(ref(db,'exams')); await set(newRef,exam);
+    toast('✓ 등록되었습니다');
+    document.getElementById('examTitle').value=''; parsedQuiz=null;
+    document.getElementById('fileinfo').className='fileinfo';
+    document.getElementById('subjWrap').classList.add('hidden');
+    fi.value=''; loadExams();
+  }catch(e){ toast('등록 실패: '+e.message,true); }
+  btn.textContent='Firebase에 등록하기'; updateSave();
+}
+
+// ---- list / delete ----
+window.loadExams=async function(){
+  const list=document.getElementById('examList');
+  if(!db){ list.innerHTML='<div class="empty">DB 연결 안됨</div>'; return; }
+  list.innerHTML='<div class="empty">불러오는 중…</div>';
+  try{
+    const snap=await get(ref(db,'exams'));
+    if(!snap.exists()){ list.innerHTML='<div class="empty">아직 등록된 모의고사가 없습니다</div>'; return; }
+    const data=snap.val(); const ids=Object.keys(data).sort((a,b)=>(data[b].createdAt||'').localeCompare(data[a].createdAt||''));
+    list.innerHTML='';
+    ids.forEach(id=>{ const e=data[id];
+      const d=document.createElement('div'); d.className='exam-item';
+      const dt=e.createdAt?new Date(e.createdAt).toLocaleDateString('ko-KR'):'';
+      d.innerHTML='<div class="ei-main"><div class="ei-title">'+e.title+'</div>'+
+        '<div class="ei-meta">'+e.count+'문항 · '+e.timeLimit+'분 · 합격 '+e.passScore+'점 · '+dt+'</div></div>'+
+        '<div class="ei-actions"><button class="btn danger sm">삭제</button></div>';
+      d.querySelector('.btn.danger').onclick=()=>delExam(id,e.title);
+      list.appendChild(d);
+    });
+  }catch(e){ list.innerHTML='<div class="empty">불러오기 실패: '+e.message+'</div>'; }
+}
+async function delExam(id,title){
+  if(!confirm('"'+title+'" 회차를 삭제할까요?\n(학생 응시 기록은 그대로 남습니다)')) return;
+  try{ await remove(ref(db,'exams/'+id)); toast('삭제되었습니다'); loadExams(); }
+  catch(e){ toast('삭제 실패: '+e.message,true); }
+}
+window.delExam=delExam;
+
+function toast(msg,err){ const t=document.getElementById('toast'); t.textContent=msg; t.className='toast show'+(err?' err':''); setTimeout(()=>t.className='toast',2200); }
+</script>
+</body>
+</html>
