@@ -18,6 +18,7 @@
   .timer.warn{ color:var(--warn); border-color:var(--warn); }
   .timer.danger{ color:var(--no); border-color:var(--no); animation:pulse 1s infinite; }
   @keyframes pulse{ 50%{opacity:.55} }
+  .spin{ display:inline-block; animation:spin 1.4s linear infinite; } @keyframes spin{ to{transform:rotate(360deg)} }
   .progbar{ height:4px; background:var(--card2); }
   .progfill{ height:100%; background:linear-gradient(90deg,var(--accent),var(--accent2)); width:0%; transition:width .3s ease; }
 
@@ -242,14 +243,99 @@ function renderResult(r,wrong,tot){
     '<div class="vsub">'+r.examTitle+'</div><div class="vsub">'+r.name+' · '+r.sid+' · '+r.totalCorrect+'/'+QUIZ.length+' 정답</div>'+
     (r.pass?'':'<div class="vsub" style="color:var(--no)">사유: '+reason+'</div>')+
     '<div class="subjgrid">'+subjHtml+'</div><div class="saveState" id="saveState">점수 저장 중…</div>'+
+    '<button class="btn" style="background:linear-gradient(135deg,#7c5cff,#a97bff);margin-bottom:12px" onclick="runConsulting()">🤖 AI 학습 컨설팅 받기</button>'+
+    '<div id="consultBox"></div>'+
     '<div class="nav"><button class="btn ghost" onclick="location.reload()">다른 회차 풀기</button></div>'+
     '<div class="section-title">📝 오답노트 ('+wrong.length+'문제)</div>'+wrongHtml;
+  window._lastResult=r; window._lastWrong=wrong; window._lastTot=tot;
   window.scrollTo(0,0);
+}
+
+// ---- AI 학습 컨설팅 ----
+// ⚙️ n8n 웹훅 주소 — n8n Webhook 노드의 Production URL로 맞춰주세요
+const CONSULT_WEBHOOK="https://gt4065b.zeabur.app/webhook/adsp-consult";
+
+window.runConsulting=async function(){
+  const box=document.getElementById('consultBox');
+  const r=window._lastResult, wrong=window._lastWrong, tot=window._lastTot;
+  if(!r){ return; }
+  box.innerHTML='<div style="background:var(--card);border:1px solid var(--line);border-radius:14px;padding:20px;margin-bottom:14px;text-align:center;color:var(--sub)">'+
+    '<div style="font-size:22px;margin-bottom:8px" class="spin">🤖</div>AI가 학습 상태를 분석하고 있어요…<br><span style="font-size:12px">잠시만 기다려주세요 (10~20초)</span></div>';
+  // 과목별 성적 + 오답 문제를 정리해서 n8n으로 전송
+  const subjNames={1:'데이터 이해',2:'데이터 분석 기획',3:'데이터 분석'};
+  const wrongBySubj={};
+  wrong.forEach(w=>{ const s=w.q.subj; (wrongBySubj[s]=wrongBySubj[s]||[]).push({q:w.q.q, myAnswer:(w.sel!=null?w.q.opts[w.sel]:'미응답'), correct:w.q.answer}); });
+  const subjects=[1,2,3].filter(s=>tot[s]).map(s=>({
+    subject:subjNames[s], correct:r.subjCorrect[s], total:tot[s], score:r.subjScore[s],
+    failed:(r.failedSubj||[]).includes(s), wrongQuestions:wrongBySubj[s]||[]
+  }));
+  const payload={
+    examTitle:r.examTitle||'', name:r.name, sid:r.sid,
+    total:r.total, totalCorrect:r.totalCorrect, questionCount:r.totalCorrect+wrong.length,
+    pass:r.pass, failedSubjects:(r.failedSubj||[]).map(s=>subjNames[s]),
+    subjects
+  };
+
+  try{
+    const resp=await fetch(CONSULT_WEBHOOK,{
+      method:"POST", headers:{"Content-Type":"application/json"},
+      body:JSON.stringify(payload)
+    });
+    if(!resp.ok) throw new Error("서버 응답 오류 ("+resp.status+")");
+    const raw=await resp.text();
+    // n8n 응답이 문자열/객체/배열 등 다양하게 올 수 있어 최대한 유연하게 파싱
+    let c=parseConsult(raw);
+    if(!c){ box.innerHTML=renderConsultFallback(raw); return; }
+    box.innerHTML=renderConsult(c);
+  }catch(e){
+    box.innerHTML='<div style="background:var(--nobg);border:1px solid var(--no);border-radius:14px;padding:18px;margin-bottom:14px;color:var(--no);font-size:14px">'+
+      '⚠ AI 컨설팅을 불러오지 못했어요.<br><span style="font-size:12px;color:var(--sub)">'+esc(e.message)+'</span><br>'+
+      '<span style="font-size:12px;color:var(--sub)">잠시 후 다시 시도하거나 담당 교수님께 문의해주세요.</span></div>';
+  }
+}
+
+// n8n의 다양한 응답 형태를 안전하게 컨설팅 객체로 변환
+function parseConsult(raw){
+  let data=raw;
+  if(typeof raw==='string'){
+    const t=raw.replace(/```json|```/g,'').trim();
+    try{ data=JSON.parse(t); }catch(e){ return null; }
+  }
+  // 배열로 감싸져 오면 첫 요소
+  if(Array.isArray(data)) data=data[0];
+  if(!data||typeof data!=='object') return null;
+  // { output: {...} } / { json: {...} } / { message: {...} } 등 래핑 해제
+  for(const key of ['output','json','data','result','message','content']){
+    if(data[key] && typeof data[key]==='object' && !Array.isArray(data[key])) { data=data[key]; }
+  }
+  // output이 JSON 문자열이면 한 번 더 파싱
+  if(typeof data==='string'){ try{ data=JSON.parse(data.replace(/```json|```/g,'').trim()); }catch(e){ return null; } }
+  if(data && (data.overall||data.studyPlan||data.weaknesses)) return data;
+  return null;
+}
+
+function renderConsult(c){
+  const chips=(arr,color)=>(arr||[]).map(t=>'<div style="background:var(--card2);border-left:3px solid '+color+';border-radius:8px;padding:10px 12px;margin:6px 0;font-size:13.5px;text-align:left">'+esc(t)+'</div>').join('');
+  return '<div style="background:var(--card);border:1px solid #7c5cff;border-radius:16px;padding:20px;margin-bottom:16px;text-align:left">'+
+    '<div style="font-size:16px;font-weight:800;color:#a97bff;margin-bottom:12px">🤖 AI 학습 컨설팅</div>'+
+    '<div style="background:var(--card2);border-radius:10px;padding:14px;font-size:14px;margin-bottom:16px;line-height:1.7">'+esc(c.overall||'')+'</div>'+
+    (c.strengths&&c.strengths.length?'<div style="font-size:13px;font-weight:700;color:var(--ok);margin:12px 0 4px">💪 강점</div>'+chips(c.strengths,'var(--ok)'):'')+
+    (c.weaknesses&&c.weaknesses.length?'<div style="font-size:13px;font-weight:700;color:var(--no);margin:14px 0 4px">🎯 보완할 점</div>'+chips(c.weaknesses,'var(--no)'):'')+
+    (c.focusTopics&&c.focusTopics.length?'<div style="font-size:13px;font-weight:700;color:var(--warn);margin:14px 0 4px">📌 집중 학습 주제</div>'+chips(c.focusTopics,'var(--warn)'):'')+
+    (c.studyPlan&&c.studyPlan.length?'<div style="font-size:13px;font-weight:700;color:var(--accent2);margin:14px 0 4px">📚 학습 플랜</div>'+chips(c.studyPlan,'var(--accent)'):'')+
+    (c.encouragement?'<div style="background:linear-gradient(135deg,rgba(124,92,255,.15),rgba(169,123,255,.1));border-radius:10px;padding:14px;font-size:14px;margin-top:16px;text-align:center;font-weight:600">💜 '+esc(c.encouragement)+'</div>':'')+
+    '</div>';
+}
+function renderConsultFallback(text){
+  return '<div style="background:var(--card);border:1px solid #7c5cff;border-radius:16px;padding:20px;margin-bottom:16px;text-align:left;white-space:pre-wrap;font-size:14px;line-height:1.7">'+
+    '<div style="font-size:16px;font-weight:800;color:#a97bff;margin-bottom:12px">🤖 AI 학습 컨설팅</div>'+esc(text)+'</div>';
 }
 async function saveResult(r){ const el=()=>document.getElementById('saveState');
   if(!db){ if(el())el().textContent='⚠ DB 연결 안됨'; return; }
   try{ await set(push(ref(db,'results')),r); if(el()){el().textContent='✓ 점수가 저장되었습니다';el().style.color='var(--ok)';} }
   catch(e){ if(el()){el().textContent='⚠ 저장 실패: '+e.message;el().style.color='var(--no)';} } }
+function esc(s){ return String(s==null?'':s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c])); }
+window.esc=esc;
 function toast(msg){ const t=document.getElementById('toast'); t.textContent=msg; t.classList.add('show'); setTimeout(()=>t.classList.remove('show'),2000); }
 window.toast=toast;
 </script>
