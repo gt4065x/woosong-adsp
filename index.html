@@ -1,0 +1,314 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ADsP 실전 모의고사 1회</title>
+<style>
+  * { margin:0; padding:0; box-sizing:border-box; -webkit-tap-highlight-color:transparent; }
+  :root{
+    --bg:#0f1115; --card:#1a1d24; --card2:#22262f; --line:#2c313c;
+    --txt:#e8eaed; --sub:#9aa0aa; --accent:#5b8cff; --accent2:#7aa2ff;
+    --ok:#2ecc71; --okbg:#12331f; --no:#ff5c5c; --nobg:#361618; --warn:#ffb84d;
+  }
+  body{ font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,'Malgun Gothic',sans-serif;
+    background:var(--bg); color:var(--txt); line-height:1.6; padding-bottom:40px; }
+  .wrap{ max-width:640px; margin:0 auto; padding:0 16px; }
+  header{ position:sticky; top:0; z-index:10; background:rgba(15,17,21,.92);
+    backdrop-filter:blur(10px); border-bottom:1px solid var(--line); }
+  .hbar{ max-width:640px; margin:0 auto; padding:12px 16px; display:flex; align-items:center; justify-content:space-between; gap:12px; }
+  .title{ font-size:15px; font-weight:700; letter-spacing:-.3px; }
+  .title small{ color:var(--sub); font-weight:500; }
+  .timer{ font-variant-numeric:tabular-nums; font-weight:700; font-size:16px; padding:6px 12px; border-radius:10px; background:var(--card2); border:1px solid var(--line); }
+  .timer.warn{ color:var(--warn); border-color:var(--warn); }
+  .timer.danger{ color:var(--no); border-color:var(--no); animation:pulse 1s infinite; }
+  @keyframes pulse{ 50%{opacity:.55} }
+  .progbar{ height:4px; background:var(--card2); }
+  .progfill{ height:100%; background:linear-gradient(90deg,var(--accent),var(--accent2)); width:0%; transition:width .3s ease; }
+
+  .intro{ text-align:center; padding:48px 20px 30px; }
+  .badge{ display:inline-block; font-size:12px; font-weight:700; color:var(--accent2); background:rgba(91,140,255,.12); padding:6px 14px; border-radius:20px; margin-bottom:20px; }
+  .intro h1{ font-size:26px; letter-spacing:-.5px; margin-bottom:10px; }
+  .intro p{ color:var(--sub); font-size:15px; margin-bottom:6px; }
+  .meta{ display:flex; gap:10px; justify-content:center; margin:26px 0; flex-wrap:wrap; }
+  .chip{ background:var(--card); border:1px solid var(--line); border-radius:12px; padding:14px 18px; min-width:90px; }
+  .chip .n{ font-size:22px; font-weight:800; color:var(--accent2); }
+  .chip .l{ font-size:12px; color:var(--sub); margin-top:2px; }
+  .field{ text-align:left; margin:14px 0; }
+  .field label{ display:block; font-size:13px; color:var(--sub); margin-bottom:6px; font-weight:600; }
+  .field input{ width:100%; background:var(--card); border:1.5px solid var(--line); border-radius:12px; padding:14px 16px; color:var(--txt); font-size:15px; font-family:inherit; }
+  .field input:focus{ outline:none; border-color:var(--accent); }
+  .formbox{ max-width:360px; margin:10px auto 24px; }
+  .rulebox{ text-align:left; background:var(--card); border:1px solid var(--line); border-radius:12px; padding:16px; margin:20px auto; max-width:420px; font-size:13px; color:var(--sub); }
+  .rulebox b{ color:var(--txt); }
+
+  .btn{ display:inline-block; width:100%; border:none; cursor:pointer; font-family:inherit; background:linear-gradient(135deg,var(--accent),var(--accent2)); color:#fff; font-size:16px; font-weight:700; padding:16px; border-radius:14px; transition:transform .1s, opacity .2s; }
+  .btn:active{ transform:scale(.98); }
+  .btn:disabled{ opacity:.4; cursor:not-allowed; }
+  .btn.ghost{ background:var(--card2); color:var(--txt); border:1px solid var(--line); }
+
+  .qwrap{ padding:22px 0; }
+  .qtop{ display:flex; align-items:center; gap:8px; margin-bottom:10px; }
+  .qnum{ font-size:13px; color:var(--accent2); font-weight:700; }
+  .subjtag{ font-size:11px; font-weight:700; color:var(--sub); background:var(--card2); border:1px solid var(--line); padding:2px 8px; border-radius:6px; }
+  .qtext{ font-size:18px; font-weight:600; letter-spacing:-.3px; margin-bottom:22px; word-break:keep-all; }
+  .opts{ display:flex; flex-direction:column; gap:10px; }
+  .opt{ text-align:left; background:var(--card); border:1.5px solid var(--line); color:var(--txt); padding:15px 16px; border-radius:13px; font-size:15px; font-family:inherit; cursor:pointer; display:flex; align-items:center; gap:12px; transition:border-color .15s, background .15s; word-break:keep-all; }
+  .opt:active{ background:var(--card2); }
+  .opt .k{ flex-shrink:0; width:26px; height:26px; border-radius:8px; background:var(--card2); border:1px solid var(--line); display:flex; align-items:center; justify-content:center; font-size:13px; font-weight:700; color:var(--sub); }
+  .opt.sel{ border-color:var(--accent); background:rgba(91,140,255,.08); }
+  .opt.sel .k{ background:var(--accent); color:#fff; border-color:var(--accent); }
+
+  .nav{ display:flex; gap:10px; margin-top:24px; }
+  .nav .btn{ flex:1; }
+  .palette{ display:grid; grid-template-columns:repeat(10,1fr); gap:6px; margin-top:26px; }
+  .pcell{ aspect-ratio:1; border-radius:8px; background:var(--card); border:1px solid var(--line); font-size:12px; font-weight:700; color:var(--sub); cursor:pointer; display:flex; align-items:center; justify-content:center; }
+  .pcell.done{ background:var(--accent); color:#fff; border-color:var(--accent); }
+  .pcell.cur{ outline:2px solid var(--accent2); outline-offset:1px; }
+  .palette-label{ font-size:12px; color:var(--sub); margin:24px 0 4px; }
+
+  .result{ text-align:center; padding:36px 20px; }
+  .scorecircle{ width:170px; height:170px; margin:6px auto 22px; border-radius:50%; display:flex; align-items:center; justify-content:center; background:conic-gradient(var(--c,var(--accent)) var(--deg,0deg), var(--card2) 0deg); position:relative; }
+  .scorecircle::before{ content:''; position:absolute; inset:13px; border-radius:50%; background:var(--bg); }
+  .scorecircle .inner{ position:relative; z-index:1; }
+  .scorecircle .pct{ font-size:44px; font-weight:800; }
+  .scorecircle .lbl{ font-size:13px; color:var(--sub); }
+  .verdict{ font-size:24px; font-weight:800; margin-bottom:6px; }
+  .verdict.pass{ color:var(--ok); } .verdict.fail{ color:var(--no); }
+  .vsub{ color:var(--sub); font-size:14px; margin-bottom:8px; }
+  .subjgrid{ display:grid; grid-template-columns:repeat(3,1fr); gap:10px; margin:22px 0; }
+  .subjcard{ background:var(--card); border:1px solid var(--line); border-radius:12px; padding:14px 8px; }
+  .subjcard.fail{ border-color:var(--no); background:var(--nobg); }
+  .subjcard .sn{ font-size:12px; color:var(--sub); }
+  .subjcard .sv{ font-size:20px; font-weight:800; margin-top:4px; }
+  .subjcard .sp{ font-size:11px; margin-top:2px; }
+  .subjcard .sp.ok{ color:var(--ok); } .subjcard .sp.no{ color:var(--no); }
+  .saveState{ font-size:13px; color:var(--sub); margin:14px 0; }
+  .review-item{ text-align:left; background:var(--card); border:1px solid var(--line); border-radius:12px; padding:14px 15px; margin-bottom:10px; }
+  .review-item .rq{ font-size:14px; font-weight:600; margin-bottom:8px; word-break:keep-all; }
+  .review-item .rq .badge2{ font-size:10px; color:var(--sub); background:var(--card2); padding:1px 6px; border-radius:5px; margin-right:6px; }
+  .review-item .ra{ font-size:13px; }
+  .review-item .ra.mine{ color:var(--no); } .review-item .ra.ans{ color:var(--ok); }
+  .review-item .rh{ font-size:13px; color:var(--sub); margin-top:6px; border-top:1px dashed var(--line); padding-top:6px; }
+  .section-title{ text-align:left; font-size:15px; font-weight:700; margin:28px 0 12px; }
+  .hidden{ display:none; }
+  .toast{ position:fixed; bottom:20px; left:50%; transform:translateX(-50%); background:var(--card2); border:1px solid var(--line); color:var(--txt); padding:12px 20px; border-radius:12px; font-size:14px; z-index:100; opacity:0; transition:opacity .3s; }
+  .toast.show{ opacity:1; }
+</style>
+</head>
+<body>
+<header>
+  <div class="hbar">
+    <div class="title">ADsP 실전 모의고사 <small>· 1회</small></div>
+    <div class="timer" id="timer">70:00</div>
+  </div>
+  <div class="progbar"><div class="progfill" id="progfill"></div></div>
+</header>
+
+<div class="wrap">
+  <section id="intro" class="intro">
+    <div class="badge">데이터분석 준전문가 · 실전 대비</div>
+    <h1>ADsP 실전 모의고사 1회</h1>
+    <p>실제 시험과 동일한 채점 룰로 합격 여부를 즉시 확인합니다.</p>
+    <div class="meta">
+      <div class="chip"><div class="n">50</div><div class="l">문항</div></div>
+      <div class="chip"><div class="n">70</div><div class="l">제한(분)</div></div>
+      <div class="chip"><div class="n">60</div><div class="l">합격(점)</div></div>
+    </div>
+    <div class="formbox">
+      <div class="field"><label>이름</label><input id="inName" placeholder="홍길동" autocomplete="off"></div>
+      <div class="field"><label>학번</label><input id="inId" placeholder="20250001" autocomplete="off"></div>
+    </div>
+    <div class="rulebox">
+      <b>채점 기준</b><br>
+      · 문항당 2점, 100점 만점 · 60점 이상 합격<br>
+      · 과목별 40% 미만 시 <b>과락(불합격)</b><br>
+      · 1과목(1~10) · 2과목(11~20) · 3과목(21~50)<br>
+      · 과락 최소: 1·2과목 각 8점, 3과목 24점
+    </div>
+    <button class="btn" onclick="startQuiz()">시험 시작하기</button>
+  </section>
+
+  <section id="quiz" class="qwrap hidden">
+    <div class="qtop"><span class="qnum" id="qnum"></span><span class="subjtag" id="subjtag"></span></div>
+    <div class="qtext" id="qtext"></div>
+    <div class="opts" id="opts"></div>
+    <div class="nav">
+      <button class="btn ghost" id="prevBtn" onclick="prevQ()">← 이전</button>
+      <button class="btn" id="nextBtn" onclick="nextQ()">다음 →</button>
+    </div>
+    <div class="palette-label">문제 이동 (파란색 = 응답 완료)</div>
+    <div class="palette" id="palette"></div>
+    <button class="btn" style="margin-top:20px;background:var(--ok)" onclick="submitExam()">답안 제출하고 채점하기</button>
+  </section>
+
+  <section id="result" class="result hidden"></section>
+</div>
+<div class="toast" id="toast"></div>
+
+<script type="module">
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
+import { getDatabase, ref, push, set } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-database.js";
+
+const firebaseConfig = {
+  apiKey: "AIzaSyDK62mS_K3JX14VLHZq2zYFFRl6K8u1N_I",
+  authDomain: "adsp-prep-test.firebaseapp.com",
+  databaseURL: "https://adsp-prep-test-default-rtdb.asia-southeast1.firebasedatabase.app",
+  projectId: "adsp-prep-test",
+  storageBucket: "adsp-prep-test.firebasestorage.app",
+  messagingSenderId: "753653860246",
+  appId: "1:753653860246:web:7541a10527ed17658cbfb7",
+  measurementId: "G-BNDTQ0G1EK"
+};
+let db=null;
+try{ const app=initializeApp(firebaseConfig); db=getDatabase(app); }catch(e){ console.error('FB init',e); }
+
+const QUIZ = [{"q": "DIKW 피라미드에서 가공되지 않은 사실이나 측정값을 의미하는 것은 무엇입니까?", "opts": ["지혜(Wisdom)", "지식(Knowledge)", "정보(Information)", "데이터(Data)"], "answer": "데이터(Data)", "hint": "데이터는 관찰이나 측정을 통해 얻은 가공 전의 사실과 값입니다", "subj": 1}, {"q": "다음 중 정성적 데이터(Qualitative Data)의 예로 가장 적절한 것은 무엇입니까?", "opts": ["고객의 제품 사용 후기", "상품의 판매 가격", "월별 매출액", "하루 방문자 수"], "answer": "고객의 제품 사용 후기", "hint": "정성적 데이터는 숫자보다는 언어와 문장처럼 특성이나 의견을 표현하는 데이터입니다", "subj": 1}, {"q": "데이터베이스의 특징 중 여러 사용자가 함께 데이터를 이용한다는 의미는 무엇입니까?", "opts": ["공용 데이터", "통합된 데이터", "변화되는 데이터", "저장된 데이터"], "answer": "공용 데이터", "hint": "공용 데이터는 여러 사용자가 공동으로 이용하는 데이터를 뜻합니다", "subj": 1}, {"q": "SECI 지식 변환 모델에서 개인의 암묵지가 다른 사람의 암묵지로 전달되는 과정은 무엇입니까?", "opts": ["공통화(Socialization)", "표출화(Externalization)", "연결화(Combination)", "내면화(Internalization)"], "answer": "공통화(Socialization)", "hint": "공통화는 경험 공유와 관찰을 통해 암묵지가 암묵지로 전달되는 과정입니다", "subj": 1}, {"q": "빅데이터의 전통적인 3V에 해당하지 않는 것은 무엇입니까?", "opts": ["다양성(Variety)", "속도(Velocity)", "규모(Volume)", "정확성(Accuracy)"], "answer": "정확성(Accuracy)", "hint": "빅데이터의 전통적인 3V는 규모 속도 다양성입니다", "subj": 1}, {"q": "현실의 행동이나 현상을 데이터로 기록하고 분석 가능한 형태로 만드는 것을 무엇이라고 합니까?", "opts": ["데이터화(Datafication)", "데이터 거버넌스", "데이터 삭제", "데이터 마이닝"], "answer": "데이터화(Datafication)", "hint": "데이터화는 기존에 측정하기 어려웠던 활동과 현상을 데이터로 바꾸는 과정입니다", "subj": 1}, {"q": "개인을 알아볼 수 없도록 식별 정보를 제거하거나 변형하는 조치는 무엇입니까?", "opts": ["데이터 정렬", "데이터 결합", "익명화(Anonymization)", "데이터 복제"], "answer": "익명화(Anonymization)", "hint": "익명화는 특정 개인을 식별하기 어렵도록 정보를 제거하거나 변형하는 처리입니다", "subj": 1}, {"q": "온라인 거래 처리 시스템인 OLTP의 주된 목적은 무엇입니까?", "opts": ["주문 입력과 결제 같은 실시간 거래 처리", "장기간의 경영 전략 수립", "대규모 비정형 데이터 탐색", "다차원 통계 분석"], "answer": "주문 입력과 결제 같은 실시간 거래 처리", "hint": "OLTP는 일상적인 거래를 빠르게 입력 수정 조회하는 데 적합합니다", "subj": 1}, {"q": "다음 중 데이터 사이언티스트의 하드 스킬(Hard Skill)에 해당하는 것은 무엇입니까?", "opts": ["분석 결과를 전달하는 스토리텔링", "협업을 위한 경청 능력", "조직 구성원을 설득하는 능력", "통계 분석과 프로그래밍 능력"], "answer": "통계 분석과 프로그래밍 능력", "hint": "하드 스킬은 통계 수학 프로그래밍 데이터 처리처럼 기술적인 분석 역량입니다", "subj": 1}, {"q": "빅데이터 시대의 분석 변화로 가장 적절한 것은 무엇입니까?", "opts": ["전체 데이터보다 소수 사례만 사용한다", "상관관계보다 직관만 중시한다", "표본 중심 분석에서 전수 데이터 분석으로 확대된다", "데이터 수집보다 경험만으로 판단한다"], "answer": "표본 중심 분석에서 전수 데이터 분석으로 확대된다", "hint": "대규모 데이터 처리 기술의 발전으로 전체 데이터를 활용하는 분석이 가능해졌습니다", "subj": 1}, {"q": "데이터 분석 과제를 기획할 때 가장 먼저 명확히 해야 할 것은 무엇입니까?", "opts": ["분석가의 개인적인 선호", "분석 결과를 담을 보고서 디자인", "사용할 그래프의 색상", "해결하려는 비즈니스 문제와 목표"], "answer": "해결하려는 비즈니스 문제와 목표", "hint": "분석은 해결할 문제와 기대하는 결과를 분명히 정의하는 것에서 시작합니다", "subj": 2}, {"q": "하향식 접근법(Top-down Approach)의 출발점으로 가장 적절한 것은 무엇입니까?", "opts": ["팀원의 기술 수준을 먼저 평가한다", "데이터에서 흥미로운 패턴을 먼저 찾는다", "분석 도구를 먼저 선택한다", "경영 문제를 정의하고 분석 과제로 구체화한다"], "answer": "경영 문제를 정의하고 분석 과제로 구체화한다", "hint": "하향식 접근법은 비즈니스 문제를 먼저 정의한 뒤 필요한 분석을 설계합니다", "subj": 2}, {"q": "상향식 접근법(Bottom-up Approach)에 대한 설명으로 옳은 것은 무엇입니까?", "opts": ["보유한 데이터에서 의미 있는 패턴과 기회를 탐색한다", "분석 결과를 미리 정한 뒤 데이터를 맞춘다", "데이터를 확인하지 않고 전략부터 수립한다", "경영진의 지시만으로 분석 주제를 확정한다"], "answer": "보유한 데이터에서 의미 있는 패턴과 기회를 탐색한다", "hint": "상향식 접근법은 데이터 탐색을 통해 새로운 문제와 분석 기회를 발견합니다", "subj": 2}, {"q": "CRISP-DM 분석 방법론의 첫 번째 단계는 무엇입니까?", "opts": ["평가(Evaluation)", "데이터 준비(Data Preparation)", "업무 이해(Business Understanding)", "모델링(Modeling)"], "answer": "업무 이해(Business Understanding)", "hint": "CRISP-DM은 해결할 업무 목적과 요구사항을 이해하는 단계에서 시작합니다", "subj": 2}, {"q": "분석 과제의 우선순위를 정할 때 함께 고려하기에 가장 적절한 두 기준은 무엇입니까?", "opts": ["글자 수와 보고서 분량", "회의 횟수와 발표 시간", "분석가의 연령과 근무 기간", "전략적 중요도와 실행 가능성"], "answer": "전략적 중요도와 실행 가능성", "hint": "중요한 과제라도 실행이 어렵다면 우선순위가 달라질 수 있으므로 두 요소를 함께 봅니다", "subj": 2}, {"q": "분석 과제의 경제적 타당성을 판단할 때 가장 직접적으로 확인할 항목은 무엇입니까?", "opts": ["보고서 표지의 완성도", "분석으로 기대되는 편익과 필요한 비용", "회의실의 크기", "분석가가 선호하는 소프트웨어"], "answer": "분석으로 기대되는 편익과 필요한 비용", "hint": "경제적 타당성은 분석으로 얻는 편익이 투입 비용에 비해 적절한지 검토합니다", "subj": 2}, {"q": "데이터 거버넌스(Data Governance)의 주요 목적은 무엇입니까?", "opts": ["모든 데이터를 한 사람이 독점하는 것", "분석 결과를 외부에 무조건 공개하는 것", "오래된 데이터를 즉시 모두 삭제하는 것", "데이터 관리 원칙과 책임을 정해 품질과 활용을 높이는 것"], "answer": "데이터 관리 원칙과 책임을 정해 품질과 활용을 높이는 것", "hint": "데이터 거버넌스는 데이터의 표준 품질 보안 책임 체계를 조직 차원에서 관리합니다", "subj": 2}, {"q": "개인정보 보호를 분석 시스템의 설계 단계부터 반영하는 원칙은 무엇입니까?", "opts": ["선 분석 후 보호", "정보 공개 우선", "프라이버시 바이 디자인(Privacy by Design)", "무조건적인 데이터 결합"], "answer": "프라이버시 바이 디자인(Privacy by Design)", "hint": "프라이버시 바이 디자인은 개인정보 보호를 시스템 기획과 설계 단계부터 반영하는 원칙입니다", "subj": 2}, {"q": "분석 프로젝트가 반복적으로 수행되는 가장 큰 이유는 무엇입니까?", "opts": ["분석 결과와 새로운 요구에 따라 모델을 계속 개선해야 하기 때문", "한 번 정한 가설은 절대 바꿀 수 없기 때문", "분석 도구를 매일 교체해야 하기 때문", "데이터는 분석 과정에서 사용하지 않기 때문"], "answer": "분석 결과와 새로운 요구에 따라 모델을 계속 개선해야 하기 때문", "hint": "분석 프로젝트는 탐색과 검증을 반복하면서 데이터와 모델을 보완하는 성격이 강합니다", "subj": 2}, {"q": "분석 마스터플랜을 수립하는 목적에 가장 가까운 것은 무엇입니까?", "opts": ["모든 분석을 동시에 시작하기 위해", "분석 결과를 사전에 확정하기 위해", "데이터 품질 점검을 생략하기 위해", "분석 과제의 추진 순서와 자원 계획을 체계화하기 위해"], "answer": "분석 과제의 추진 순서와 자원 계획을 체계화하기 위해", "hint": "분석 마스터플랜은 여러 분석 과제를 우선순위 일정 인력 예산에 따라 단계적으로 추진하도록 돕습니다", "subj": 2}, {"q": "R에서 변수 x에 값 10을 저장하는 표현으로 가장 적절한 것은 무엇입니까?", "opts": ["10 ->> x만 가능", "x <- 10", "x != 10", "x == 10"], "answer": "x <- 10", "hint": "R에서는 대입 연산자 <-를 사용하여 변수에 값을 저장할 수 있습니다", "subj": 3}, {"q": "R에서 여러 값을 하나의 벡터로 묶을 때 주로 사용하는 함수는 무엇입니까?", "opts": ["c()", "table()", "print()", "mean()"], "answer": "c()", "hint": "c 함수는 여러 값을 결합하여 벡터를 만듭니다", "subj": 3}, {"q": "R에서 숫자 벡터 x의 평균을 계산하는 함수는 무엇입니까?", "opts": ["median(x)", "mean(x)", "length(x)", "sum(x)"], "answer": "mean(x)", "hint": "mean 함수는 입력된 수치의 산술평균을 계산합니다", "subj": 3}, {"q": "R에서 결측값을 나타내는 기호는 무엇입니까?", "opts": ["NULL만 사용", "INF", "NA", "TRUE"], "answer": "NA", "hint": "R에서는 관측되지 않았거나 누락된 값을 NA로 표현합니다", "subj": 3}, {"q": "분석에 필요한 데이터를 주제별로 작게 구성한 저장소를 무엇이라고 합니까?", "opts": ["데이터 마트(Data Mart)", "방화벽", "웹 브라우저", "운영체제"], "answer": "데이터 마트(Data Mart)", "hint": "데이터 마트는 특정 부서나 분석 목적에 맞춰 구성한 소규모 데이터 저장소입니다", "subj": 3}, {"q": "결측값 처리 방법으로 적절하지 않은 것은 무엇입니까?", "opts": ["결측 행을 제거한다", "결측 여부를 확인하지 않고 항상 0으로 바꾼다", "평균이나 중앙값으로 대체한다", "분석 목적에 맞는 값을 추정한다"], "answer": "결측 여부를 확인하지 않고 항상 0으로 바꾼다", "hint": "결측값을 무조건 0으로 바꾸면 데이터의 의미가 왜곡될 수 있으므로 원인과 변수 특성을 먼저 확인해야 합니다", "subj": 3}, {"q": "이상값(Outlier)에 대한 설명으로 가장 적절한 것은 무엇입니까?", "opts": ["항상 삭제해야 하는 정상값", "문자로 입력된 모든 데이터", "모든 변수의 평균값", "다른 관측값과 비교해 매우 크거나 작은 값"], "answer": "다른 관측값과 비교해 매우 크거나 작은 값", "hint": "이상값은 전체 패턴에서 크게 벗어난 관측값이며 원인을 확인한 뒤 처리해야 합니다", "subj": 3}, {"q": "다음 자료 2 4 6 8의 산술평균은 얼마입니까?", "opts": ["5", "20", "4", "6"], "answer": "5", "hint": "네 수의 합 20을 자료 수 4로 나누면 평균은 5입니다", "subj": 3}, {"q": "극단적으로 큰 값이나 작은 값의 영향을 평균보다 적게 받는 대표값은 무엇입니까?", "opts": ["최댓값", "중앙값(Median)", "분산", "표준편차"], "answer": "중앙값(Median)", "hint": "중앙값은 자료를 크기순으로 나열했을 때 가운데 위치한 값이라 이상값의 영향을 비교적 적게 받습니다", "subj": 3}, {"q": "분산(Variance)이 나타내는 의미로 가장 적절한 것은 무엇입니까?", "opts": ["두 변수의 인과관계", "범주의 개수", "자료가 평균 주변에 얼마나 퍼져 있는지", "자료의 중앙 위치"], "answer": "자료가 평균 주변에 얼마나 퍼져 있는지", "hint": "분산은 각 값이 평균에서 떨어진 정도를 제곱하여 평균한 산포도 지표입니다", "subj": 3}, {"q": "표준편차(Standard Deviation)에 대한 설명으로 옳은 것은 무엇입니까?", "opts": ["자료의 개수와 같다", "항상 0보다 작다", "분산의 제곱근이다", "분산을 제곱한 값이다"], "answer": "분산의 제곱근이다", "hint": "표준편차는 분산의 제곱근이며 원자료와 같은 단위를 사용합니다", "subj": 3}, {"q": "완전한 정규분포에서 평균 중앙값 최빈값의 관계는 어떠합니까?", "opts": ["세 값은 항상 다르다", "세 값이 서로 같다", "평균만 가장 크다", "중앙값만 가장 작다"], "answer": "세 값이 서로 같다", "hint": "대칭적인 정규분포에서는 평균 중앙값 최빈값이 같은 위치에 있습니다", "subj": 3}, {"q": "가설검정에서 귀무가설(H0)의 일반적인 역할은 무엇입니까?", "opts": ["연구자가 반드시 참이라고 믿는 주장", "차이나 효과가 없다는 기준 가설", "분석 결과를 시각화하는 방법", "표본의 크기를 정하는 공식"], "answer": "차이나 효과가 없다는 기준 가설", "hint": "귀무가설은 차이 관계 효과가 없다고 가정하고 표본 결과로 기각 여부를 판단하는 기준입니다", "subj": 3}, {"q": "가설검정에서 p값이 유의수준 0.05보다 작을 때 일반적인 판단은 무엇입니까?", "opts": ["분석을 수행할 수 없다", "표본을 모두 삭제한다", "귀무가설을 기각한다", "귀무가설을 무조건 채택한다"], "answer": "귀무가설을 기각한다", "hint": "p값이 유의수준보다 작으면 귀무가설 아래에서 현재 결과가 드물다고 판단하여 귀무가설을 기각합니다", "subj": 3}, {"q": "제1종 오류(Type I Error)는 무엇입니까?", "opts": ["거짓인 귀무가설을 올바르게 기각하는 오류", "참인 귀무가설을 잘못 기각하는 오류", "참인 대립가설을 채택하지 않는 오류", "표본의 평균을 잘못 계산하는 오류"], "answer": "참인 귀무가설을 잘못 기각하는 오류", "hint": "제1종 오류는 실제로 참인 귀무가설을 기각하는 판단 오류입니다", "subj": 3}, {"q": "상관계수의 값이 가질 수 있는 범위는 무엇입니까?", "opts": ["-10에서 10", "1보다 큰 값만 가능", "-1에서 1", "0에서 100"], "answer": "-1에서 1", "hint": "상관계수는 -1과 1 사이의 값을 가지며 부호는 방향 절댓값은 선형 관계의 강도를 나타냅니다", "subj": 3}, {"q": "회귀분석에서 설명하거나 예측하려는 결과 변수를 무엇이라고 합니까?", "opts": ["종속변수", "독립변수", "범주형 변수", "결측변수"], "answer": "종속변수", "hint": "종속변수는 다른 변수의 영향을 받아 설명하거나 예측하려는 결과 변수입니다", "subj": 3}, {"q": "회귀모형의 결정계수 R²가 나타내는 것은 무엇입니까?", "opts": ["표본의 중앙값", "결측값의 비율", "모형이 종속변수의 변동을 설명하는 비율", "독립변수의 개수"], "answer": "모형이 종속변수의 변동을 설명하는 비율", "hint": "결정계수는 회귀모형이 종속변수의 변동을 어느 정도 설명하는지 나타냅니다", "subj": 3}, {"q": "주성분분석(PCA)의 주된 목적은 무엇입니까?", "opts": ["모든 변수를 문자형으로 바꾸는 것", "여러 변수의 정보를 적은 수의 주성분으로 축약하는 것", "변수 사이의 상관을 제거하지 않고 그대로 복제하는 것", "관측값의 개수를 무조건 늘리는 것"], "answer": "여러 변수의 정보를 적은 수의 주성분으로 축약하는 것", "hint": "주성분분석은 원래 정보의 손실을 줄이면서 고차원 변수를 소수의 주성분으로 줄이는 기법입니다", "subj": 3}, {"q": "시계열 데이터에서 장기간에 걸쳐 증가하거나 감소하는 방향을 무엇이라고 합니까?", "opts": ["군집(Cluster)", "추세(Trend)", "잔차(Residual)", "결측(Missing)"], "answer": "추세(Trend)", "hint": "추세는 시간의 흐름에 따라 나타나는 장기적인 증가 또는 감소 방향입니다", "subj": 3}, {"q": "정답이 포함된 학습 데이터를 사용하여 모델을 학습하는 방식은 무엇입니까?", "opts": ["비지도학습", "강화학습", "무작위학습", "지도학습(Supervised Learning)"], "answer": "지도학습(Supervised Learning)", "hint": "지도학습은 입력 데이터와 함께 정답인 목표값을 제공하여 예측 규칙을 학습합니다", "subj": 3}, {"q": "고객이 상품을 구매할지 구매하지 않을지를 예측하는 문제는 어떤 유형입니까?", "opts": ["분류(Classification)", "연관분석(Association)", "군집(Clustering)", "차원축소"], "answer": "분류(Classification)", "hint": "구매 여부처럼 결과가 범주로 나뉘는 문제는 분류 문제입니다", "subj": 3}, {"q": "주택의 면적과 위치를 이용해 주택 가격을 예측하는 문제는 어떤 유형입니까?", "opts": ["연관분석", "회귀(Regression)", "군집", "텍스트 요약"], "answer": "회귀(Regression)", "hint": "가격처럼 연속적인 수치 값을 예측하는 문제는 회귀 문제입니다", "subj": 3}, {"q": "정답이 없는 데이터를 비슷한 특성끼리 묶는 분석 기법은 무엇입니까?", "opts": ["가설검정", "군집분석(Clustering)", "회귀분석", "시계열분해"], "answer": "군집분석(Clustering)", "hint": "군집분석은 정답 없이 데이터 간 유사성을 기준으로 여러 집단을 형성합니다", "subj": 3}, {"q": "K-means 군집분석에서 K가 의미하는 것은 무엇입니까?", "opts": ["나누려는 군집의 수", "반복 횟수의 최댓값", "결측값의 수", "독립변수의 개수"], "answer": "나누려는 군집의 수", "hint": "K-means에서 K는 미리 정하는 군집의 개수입니다", "subj": 3}, {"q": "의사결정나무(Decision Tree)의 장점으로 가장 적절한 것은 무엇입니까?", "opts": ["연속형 변수는 사용할 수 없다", "모든 데이터에서 항상 최고 정확도를 보장한다", "결측값이 있으면 절대 사용할 수 없다", "분류 규칙을 나무 구조로 표현해 이해하기 쉽다"], "answer": "분류 규칙을 나무 구조로 표현해 이해하기 쉽다", "hint": "의사결정나무는 조건과 결과가 나무 구조로 나타나 분석 과정을 설명하기 쉽습니다", "subj": 3}, {"q": "분류모형 평가에서 정확도(Accuracy)의 의미는 무엇입니까?", "opts": ["오분류된 관측값의 개수만 의미", "전체 예측 중 올바르게 예측한 비율", "양성 예측 중 실제 양성인 비율", "실제 양성 중 양성으로 맞힌 비율"], "answer": "전체 예측 중 올바르게 예측한 비율", "hint": "정확도는 전체 사례 중 정답을 맞힌 사례의 비율입니다", "subj": 3}, {"q": "재현율(Recall)의 의미로 가장 적절한 것은 무엇입니까?", "opts": ["전체 음성 중 음성으로 예측한 비율", "예측값의 평균", "실제 양성 중 양성으로 올바르게 예측한 비율", "전체 데이터 중 결측값의 비율"], "answer": "실제 양성 중 양성으로 올바르게 예측한 비율", "hint": "재현율은 실제 양성 사례를 모델이 얼마나 놓치지 않고 찾아냈는지 나타냅니다", "subj": 3}, {"q": "모델이 학습 데이터에는 매우 잘 맞지만 새로운 데이터에서는 성능이 낮은 현상은 무엇입니까?", "opts": ["정규화", "과소적합", "표준화", "과적합(Overfitting)"], "answer": "과적합(Overfitting)", "hint": "과적합은 학습 데이터의 잡음까지 지나치게 학습하여 새로운 데이터에 대한 예측력이 떨어지는 현상입니다", "subj": 3}, {"q": "모델의 일반화 성능을 확인하기 위해 데이터를 학습용과 평가용으로 나누는 이유는 무엇입니까?", "opts": ["모든 결측값을 자동으로 제거하기 위해", "학습 데이터의 행을 중복시키기 위해", "모델이 보지 못한 데이터에서 성능을 확인하기 위해", "변수 이름을 바꾸기 위해"], "answer": "모델이 보지 못한 데이터에서 성능을 확인하기 위해", "hint": "평가용 데이터는 학습에 사용하지 않은 새로운 사례에 대한 모델 성능을 점검하는 데 쓰입니다", "subj": 3}];
+const KEYS=['A','B','C','D'];
+const TIME_LIMIT=70*60;
+const SUBJ_NAMES={1:'1과목·데이터 이해',2:'2과목·분석 기획',3:'3과목·데이터 분석'};
+const SUBJ_TOTAL={1:10,2:10,3:30};       // 문항수
+const SUBJ_PASS_MIN={1:4,2:4,3:12};      // 과락 방지 최소 정답수 (40%)
+let idx=0, answers=[], timeLeft=TIME_LIMIT, timerId=null, student={};
+
+window.startQuiz=function(){
+  const name=document.getElementById('inName').value.trim();
+  const sid=document.getElementById('inId').value.trim();
+  if(!name||!sid){ toast('이름과 학번을 입력해주세요'); return; }
+  student={name,sid};
+  idx=0; answers=new Array(QUIZ.length).fill(null); timeLeft=TIME_LIMIT;
+  document.getElementById('intro').classList.add('hidden');
+  document.getElementById('result').classList.add('hidden');
+  document.getElementById('quiz').classList.remove('hidden');
+  buildPalette(); startTimer(); renderQ(); window.scrollTo(0,0);
+}
+
+function startTimer(){
+  clearInterval(timerId); updateTimerUI();
+  timerId=setInterval(()=>{ timeLeft--; updateTimerUI();
+    if(timeLeft<=0){ clearInterval(timerId); doGrade(true); } },1000);
+}
+function updateTimerUI(){
+  const m=String(Math.floor(timeLeft/60)).padStart(2,'0');
+  const s=String(timeLeft%60).padStart(2,'0');
+  const t=document.getElementById('timer'); t.textContent=m+':'+s;
+  t.className='timer'+(timeLeft<=60?' danger':(timeLeft<=300?' warn':''));
+}
+
+function buildPalette(){
+  const p=document.getElementById('palette'); p.innerHTML='';
+  QUIZ.forEach((q,i)=>{ const c=document.createElement('button');
+    c.className='pcell'; c.textContent=i+1; c.onclick=()=>{idx=i;renderQ();window.scrollTo(0,0);};
+    p.appendChild(c); });
+}
+function refreshPalette(){
+  document.querySelectorAll('.pcell').forEach((c,i)=>{
+    c.classList.toggle('done', answers[i]!==null);
+    c.classList.toggle('cur', i===idx);
+  });
+}
+
+function renderQ(){
+  const q=QUIZ[idx];
+  document.getElementById('progfill').style.width=((idx+1)/QUIZ.length*100)+'%';
+  document.getElementById('qnum').textContent='문제 '+(idx+1)+' / '+QUIZ.length;
+  document.getElementById('subjtag').textContent=SUBJ_NAMES[q.subj];
+  document.getElementById('qtext').textContent=q.q;
+  const opts=document.getElementById('opts'); opts.innerHTML='';
+  q.opts.forEach((o,i)=>{ const b=document.createElement('button');
+    b.className='opt'+(answers[idx]===i?' sel':'');
+    b.innerHTML='<span class="k">'+KEYS[i]+'</span><span>'+o+'</span>';
+    b.onclick=()=>{ answers[idx]=i; renderQ(); refreshPalette(); };
+    opts.appendChild(b); });
+  document.getElementById('prevBtn').disabled=(idx===0);
+  document.getElementById('nextBtn').disabled=(idx===QUIZ.length-1);
+  refreshPalette();
+}
+window.prevQ=()=>{ if(idx>0){idx--;renderQ();window.scrollTo(0,0);} };
+window.nextQ=()=>{ if(idx<QUIZ.length-1){idx++;renderQ();window.scrollTo(0,0);} };
+
+window.submitExam=function(){
+  const unanswered=answers.filter(a=>a===null).length;
+  if(unanswered>0){ if(!confirm('아직 '+unanswered+'문제를 풀지 않았습니다. 제출할까요?')) return; }
+  else{ if(!confirm('답안을 제출하고 채점하시겠습니까?')) return; }
+  doGrade(false);
+}
+
+function doGrade(timeUp){
+  clearInterval(timerId);
+  const subjScore={1:0,2:0,3:0}, subjCorrect={1:0,2:0,3:0};
+  let totalCorrect=0; const wrong=[];
+  QUIZ.forEach((q,i)=>{
+    const ansIdx=q.opts.indexOf(q.answer);
+    const ok=(answers[i]===ansIdx);
+    if(ok){ totalCorrect++; subjScore[q.subj]+=2; subjCorrect[q.subj]++; }
+    else wrong.push({i,q,sel:answers[i],ansIdx});
+  });
+  const total=totalCorrect*2;
+  let failedSubj=[];
+  [1,2,3].forEach(s=>{ if(subjCorrect[s]<SUBJ_PASS_MIN[s]) failedSubj.push(s); });
+  const pass=(total>=60 && failedSubj.length===0);
+  const result={ name:student.name, sid:student.sid, total, totalCorrect,
+    subjCorrect, subjScore, failedSubj, pass, timeUp,
+    durationSec:TIME_LIMIT-timeLeft, at:new Date().toISOString() };
+  renderResult(result, wrong);
+  saveToFirebase(result);
+}
+
+function renderResult(r, wrong){
+  document.getElementById('progfill').style.width='100%';
+  document.getElementById('quiz').classList.add('hidden');
+  const el=document.getElementById('result'); el.classList.remove('hidden');
+  const color=r.pass?'var(--ok)':'var(--no)';
+  let reason='';
+  if(!r.pass){
+    if(r.failedSubj.length) reason=r.failedSubj.map(s=>SUBJ_NAMES[s].split('·')[0]).join(', ')+' 과락';
+    else reason='총점 60점 미만';
+  }
+  let subjHtml='';
+  [1,2,3].forEach(s=>{
+    const failed=r.failedSubj.includes(s);
+    subjHtml+='<div class="subjcard'+(failed?' fail':'')+'">'+
+      '<div class="sn">'+SUBJ_NAMES[s].split('·')[1]+'</div>'+
+      '<div class="sv">'+r.subjScore[s]+'점</div>'+
+      '<div class="sp '+(failed?'no':'ok')+'">'+r.subjCorrect[s]+'/'+SUBJ_TOTAL[s]+(failed?' 과락':' 통과')+'</div></div>';
+  });
+  let wrongHtml='';
+  if(wrong.length===0){ wrongHtml='<div class="review-item"><div class="rq">🎉 모든 문제를 맞혔습니다!</div></div>'; }
+  else wrong.forEach(w=>{
+    const mine=(w.sel!=null)?w.q.opts[w.sel]:'미응답';
+    wrongHtml+='<div class="review-item"><div class="rq"><span class="badge2">'+SUBJ_NAMES[w.q.subj].split('·')[0]+'</span>'+(w.i+1)+'. '+w.q.q+'</div>'+
+      '<div class="ra mine">내 답: '+mine+'</div>'+
+      '<div class="ra ans">정답: '+w.q.answer+'</div>'+
+      '<div class="rh">💡 '+w.q.hint+'</div></div>';
+  });
+  const mm=Math.floor(r.durationSec/60), ss=r.durationSec%60;
+  el.innerHTML=
+    (r.timeUp?'<div class="badge" style="color:var(--no);background:var(--nobg)">⏱ 시간 종료로 자동 제출</div>':'')+
+    '<div class="scorecircle" style="--deg:'+(r.total*3.6)+'deg;--c:'+color+'"><div class="inner">'+
+      '<div class="pct" style="color:'+color+'">'+r.total+'</div><div class="lbl">점 / 100</div></div></div>'+
+    '<div class="verdict '+(r.pass?'pass':'fail')+'">'+(r.pass?'합격 🎉':'불합격')+'</div>'+
+    '<div class="vsub">'+r.name+' · '+r.sid+' · '+r.totalCorrect+'/50 정답</div>'+
+    (r.pass?'':'<div class="vsub" style="color:var(--no)">사유: '+reason+'</div>')+
+    '<div class="subjgrid">'+subjHtml+'</div>'+
+    '<div class="saveState" id="saveState">점수 저장 중…</div>'+
+    '<div class="nav"><button class="btn ghost" onclick="location.reload()">다시 풀기</button></div>'+
+    '<div class="section-title">📝 오답노트 ('+wrong.length+'문제)</div>'+wrongHtml;
+  window.scrollTo(0,0);
+}
+
+async function saveToFirebase(r){
+  const el=()=>document.getElementById('saveState');
+  if(!db){ if(el())el().textContent='⚠ DB 연결 안됨 (점수 미저장)'; return; }
+  try{
+    const listRef=ref(db,'results');
+    const newRef=push(listRef);
+    await set(newRef,r);
+    if(el()){ el().textContent='✓ 점수가 저장되었습니다'; el().style.color='var(--ok)'; }
+  }catch(e){ console.error(e); if(el()){ el().textContent='⚠ 저장 실패: '+e.message; el().style.color='var(--no)'; } }
+}
+
+function toast(msg){ const t=document.getElementById('toast'); t.textContent=msg; t.classList.add('show'); setTimeout(()=>t.classList.remove('show'),2000); }
+</script>
+</body>
+</html>
